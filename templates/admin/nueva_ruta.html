@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Nueva Ruta — Admin{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="d-flex justify-between align-center mb-2">
+    <h1>NUEVA RUTA</h1>
+    <a href="{{ url_for('admin_index') }}" class="btn btn-ghost">← VOLVER</a>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+
+        <div class="form-group">
+          <label class="form-label">NOMBRE DE LA RUTA *</label>
+          <input type="text" name="nombre" class="form-control" required placeholder="Ej: Bajada del Cerro">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">DESCRIPCIÓN</label>
+          <textarea name="descripcion" class="form-control" rows="3" placeholder="Descripción de la ruta..."></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">DIFICULTAD *</label>
+            <select name="dificultad" class="form-control" required>
+              <option value="facil">Fácil</option>
+              <option value="intermedio">Intermedio</option>
+              <option value="dificil">Difícil</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">DISTANCIA (km)</label>
+            <input type="number" name="distancia_km" class="form-control" step="0.1" min="0" placeholder="5.2">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">DESNIVEL (metros)</label>
+          <input type="number" name="desnivel_m" class="form-control" min="0" placeholder="120">
+        </div>
+
+        <hr style="border-color:var(--border);margin:1.5rem 0;">
+        <h3>COORDENADAS GPS</h3>
+        <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1rem;">
+          Sube fotos con GPS EXIF, o ingresa las coordenadas manualmente.
+        </p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">FOTO INICIO (con GPS EXIF)</label>
+            <input type="file" name="foto_inicio" class="form-control" accept="image/*">
+          </div>
+          <div class="form-group">
+            <label class="form-label">FOTO FIN (con GPS EXIF)</label>
+            <input type="file" name="foto_fin" class="form-control" accept="image/*">
+          </div>
+        </div>
+
+        <p style="font-family:var(--font-pixel);font-size:0.4rem;color:var(--text2);margin:0.5rem 0 1rem;line-height:2;">
+          — O INGRESAR COORDENADAS MANUALMENTE —
+        </p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">LAT INICIO</label>
+            <input type="number" name="lat_inicio" class="form-control" step="any" placeholder="-33.4567">
+          </div>
+          <div class="form-group">
+            <label class="form-label">LON INICIO</label>
+            <input type="number" name="lon_inicio" class="form-control" step="any" placeholder="-70.6789">
+          </div>
+          <div class="form-group">
+            <label class="form-label">LAT FIN</label>
+            <input type="number" name="lat_fin" class="form-control" step="any" placeholder="-33.4600">
+          </div>
+          <div class="form-group">
+            <label class="form-label">LON FIN</label>
+            <input type="number" name="lon_fin" class="form-control" step="any" placeholder="-70.6800">
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0.75rem;margin-top:1rem;">
+          <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">CREAR RUTA</button>
+          <a href="{{ url_for('admin_index') }}" class="btn btn-ghost">CANCELAR</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

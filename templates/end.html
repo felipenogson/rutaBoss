@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Llegada — {{ ruta.nombre }}{% endblock %}
+
+{% block content %}
+<div class="section text-center">
+  <p class="pixel text-muted" style="font-size:0.45rem;margin-bottom:0.5rem;">PUNTO DE LLEGADA</p>
+  <h1>{{ ruta.nombre }}</h1>
+
+  <div style="margin:1.5rem 0;">
+    <p class="timer-label">TIEMPO TRANSCURRIDO</p>
+    <div class="timer-display" id="live-timer">--:--</div>
+  </div>
+
+  <div id="gps-status" class="gps-status gps-waiting">
+    Presiona el botón cuando llegues al punto de fin.<br>Debes estar a menos de 10m.
+  </div>
+
+  <button id="btn-terminar" class="btn btn-start" style="background:var(--red);">
+    🏁 REGISTRAR LLEGADA
+  </button>
+
+  <p style="font-family:var(--font-pixel);font-size:0.4rem;color:var(--text2);margin-top:1.5rem;line-height:2;">
+    ⚠ El GPS debe estar activado.<br>
+    Sesión iniciada: {{ sesion.iniciada_en.strftime('%H:%M:%S') }}
+  </p>
+</div>
+
+<script>
+  // Restore timer from server-side start time
+  const startedAt = new Date('{{ sesion.iniciada_en.isoformat() }}Z').getTime();
+  startLiveTimer(startedAt);
+  initEndScreen({{ ruta.id }});
+</script>
+{% endblock %}

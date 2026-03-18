@@ -1,0 +1,24 @@
+# Secretos de google auth
+rutaBoss_client_secret_apps.googleusercontent.com.json
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets
+.env
+
+# Database
+*.db
+
+# Uploads
+uploads/rutas/
+
+# OS
+.DS_Store

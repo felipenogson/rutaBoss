@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin — RutaBoss{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="d-flex justify-between align-center mb-2">
+    <h1>PANEL ADMIN</h1>
+    <div class="d-flex gap-1">
+      <a href="{{ url_for('admin_nueva_ruta') }}" class="btn btn-primary">+ NUEVA RUTA</a>
+      <form method="post" action="{{ url_for('admin_logout') }}">
+        <button type="submit" class="btn btn-ghost">SALIR</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-value">{{ stats.total_rutas }}</span>
+      <span class="stat-label">RUTAS</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ stats.total_sesiones }}</span>
+      <span class="stat-label">COMPLETADAS</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ stats.total_usuarios }}</span>
+      <span class="stat-label">USUARIOS</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>RUTAS</h2>
+    </div>
+    {% if rutas %}
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>NOMBRE</th>
+          <th>DIFIC.</th>
+          <th>KM</th>
+          <th>ESTADO</th>
+          <th>ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rutas %}
+        <tr>
+          <td>
+            <a href="{{ url_for('ruta_detalle', ruta_id=r.id) }}" style="color:var(--cyan);text-decoration:none;">{{ r.nombre }}</a>
+          </td>
+          <td><span class="badge badge-{{ r.dificultad }}">{{ r.dificultad }}</span></td>
+          <td style="color:var(--text2);">{{ r.distancia_km or '—' }}</td>
+          <td>
+            {% if r.activa %}
+              <span style="color:var(--green);font-family:var(--font-pixel);font-size:0.45rem;">ACTIVA</span>
+            {% else %}
+              <span style="color:var(--red);font-family:var(--font-pixel);font-size:0.45rem;">INACTIVA</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-1">
+              <a href="{{ url_for('admin_qr', ruta_id=r.id) }}" class="btn btn-ghost" style="font-size:0.4rem;">QR</a>
+              <form method="post" action="{{ url_for('admin_toggle_ruta', ruta_id=r.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-ghost" style="font-size:0.4rem;">
+                  {{ 'DESACTIVAR' if r.activa else 'ACTIVAR' }}
+                </button>
+              </form>
+              <form method="post" action="{{ url_for('admin_borrar_ruta', ruta_id=r.id) }}" style="display:inline;"
+                    onsubmit="return confirm('¿Borrar ruta {{ r.nombre }}?')">
+                <button type="submit" class="btn btn-danger" style="font-size:0.4rem;">BORRAR</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="card-body text-center">
+      <p class="pixel text-muted" style="font-size:0.45rem;">No hay rutas. <a href="{{ url_for('admin_nueva_ruta') }}" style="color:var(--cyan);">Crear primera ruta</a></p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

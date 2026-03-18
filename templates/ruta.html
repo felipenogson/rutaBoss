@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ ruta.nombre }} — RutaBoss{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="d-flex justify-between align-center mb-1">
+    <a href="{{ url_for('index') }}" class="btn btn-ghost" style="font-size:0.45rem;">← VOLVER</a>
+    <span class="badge badge-{{ ruta.dificultad }}">{{ ruta.dificultad }}</span>
+  </div>
+
+  <h1>{{ ruta.nombre }}</h1>
+
+  <div class="ruta-meta mb-2">
+    {% if ruta.distancia_km %}<span>🚴 {{ ruta.distancia_km }} km</span>{% endif %}
+    {% if ruta.desnivel_m %}<span>⛰ {{ ruta.desnivel_m }} m desnivel</span>{% endif %}
+  </div>
+
+  {% if ruta.descripcion %}
+  <p style="color:var(--text2);margin-bottom:1rem;">{{ ruta.descripcion }}</p>
+  {% endif %}
+
+  {% if ruta.lat_inicio and ruta.lon_inicio and ruta.lat_fin and ruta.lon_fin %}
+  <div id="map"></div>
+  {% endif %}
+
+  <div style="margin:1.5rem 0;">
+    <a href="{{ url_for('start', ruta_id=ruta.id) }}" class="btn btn-start">
+      🚦 INICIAR RUTA
+    </a>
+    <p style="font-family:var(--font-pixel);font-size:0.4rem;color:var(--text2);text-align:center;margin-top:0.5rem;line-height:1.8;">
+      Escanea el QR físico en el punto de inicio
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>LEADERBOARD</h2>
+    </div>
+    <div class="card-body">
+      {% if leaderboard %}
+      <ul class="leaderboard">
+        {% for e in leaderboard %}
+        <li class="leaderboard-entry">
+          <span class="rank rank-{{ e.rank if e.rank <= 3 else 'other' }}">
+            {% if e.rank == 1 %}🥇{% elif e.rank == 2 %}🥈{% elif e.rank == 3 %}🥉{% else %}#{{ e.rank }}{% endif %}
+          </span>
+          {% if e.anonimo %}
+            <span class="lb-initials">{{ e.iniciales }}</span>
+            <span class="lb-name text-muted" style="font-size:0.85rem;">ANÓNIMO</span>
+          {% else %}
+            {% if e.foto_url %}<img src="{{ e.foto_url }}" class="lb-avatar" alt="">{% endif %}
+            <span class="lb-name">{{ e.nombre }}</span>
+          {% endif %}
+          <span class="lb-time">{{ e.tiempo | format_tiempo }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+        <p class="pixel text-muted text-center" style="font-size:0.45rem;padding:1rem 0;">
+          Sé el primero en completar esta ruta.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if ruta.lat_inicio and ruta.lon_inicio and ruta.lat_fin and ruta.lon_fin %}
+<script>
+  initMap({{ ruta.lat_inicio }}, {{ ruta.lon_inicio }}, {{ ruta.lat_fin }}, {{ ruta.lon_fin }});
+</script>
+{% endif %}
+{% endblock %}

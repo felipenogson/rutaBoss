@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}QR — {{ ruta.nombre }}{% endblock %}
+
+{% block content %}
+<div class="section no-print">
+  <div class="d-flex justify-between align-center mb-2">
+    <h1>QR CODES</h1>
+    <div class="d-flex gap-1">
+      <a href="{{ url_for('admin_index') }}" class="btn btn-ghost no-print">← VOLVER</a>
+      <button onclick="window.print()" class="btn btn-primary no-print">🖨 IMPRIMIR / PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="max-width:520px;">
+  <h2 class="text-center" style="margin-bottom:1.5rem;">{{ ruta.nombre }}</h2>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+    <div class="card text-center">
+      <div class="card-body qr-block">
+        <p class="qr-label text-green">INICIO</p>
+        <img src="data:image/png;base64,{{ qr_inicio }}" alt="QR Inicio" style="width:180px;height:180px;">
+        <p style="font-family:var(--font-pixel);font-size:0.4rem;color:var(--text2);margin-top:0.75rem;line-height:1.8;">
+          {{ ruta.nombre }}<br>PUNTO DE INICIO
+        </p>
+        {% if ruta.lat_inicio %}
+        <p style="font-size:0.75rem;color:var(--text2);margin-top:0.25rem;">
+          {{ '%.5f' % ruta.lat_inicio }}, {{ '%.5f' % ruta.lon_inicio }}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card text-center">
+      <div class="card-body qr-block">
+        <p class="qr-label text-red">FIN</p>
+        <img src="data:image/png;base64,{{ qr_fin }}" alt="QR Fin" style="width:180px;height:180px;">
+        <p style="font-family:var(--font-pixel);font-size:0.4rem;color:var(--text2);margin-top:0.75rem;line-height:1.8;">
+          {{ ruta.nombre }}<br>PUNTO DE LLEGADA
+        </p>
+        {% if ruta.lat_fin %}
+        <p style="font-size:0.75rem;color:var(--text2);margin-top:0.25rem;">
+          {{ '%.5f' % ruta.lat_fin }}, {{ '%.5f' % ruta.lon_fin }}
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

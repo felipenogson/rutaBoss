@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}RutaBoss — Rutas ciclistas{% endblock %}
+
+{% block ticker %}
+{% if actividad %}
+<div class="ticker-wrap">
+  <span class="ticker-label">EN VIVO</span>
+  <div class="ticker-track" id="ticker">
+    {% for t in actividad %}
+    <span class="ticker-item">
+      <span class="initials">{{ t.iniciales_anonimo or (t.usuario.nombre.split()[0] if t.usuario else '???') }}</span>
+      <span class="tiempo">{{ t.tiempo_segundos | format_tiempo }}</span>
+      <span class="ruta-name">— {{ t.ruta.nombre }}</span>
+    </span>
+    {% endfor %}
+    {# Duplicate for seamless loop #}
+    {% for t in actividad %}
+    <span class="ticker-item">
+      <span class="initials">{{ t.iniciales_anonimo or (t.usuario.nombre.split()[0] if t.usuario else '???') }}</span>
+      <span class="tiempo">{{ t.tiempo_segundos | format_tiempo }}</span>
+      <span class="ruta-name">— {{ t.ruta.nombre }}</span>
+    </span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="section">
+  <h1>EXPLORAR RUTAS</h1>
+
+  {% if rutas_data %}
+    {% for item in rutas_data %}
+    {% set r = item.ruta %}
+    <a href="{{ url_for('ruta_detalle', ruta_id=r.id) }}" class="ruta-card mb-2" style="display:block;margin-bottom:0.75rem;">
+      <div class="ruta-card-header">
+        <span class="ruta-card-title">{{ r.nombre }}</span>
+        <span class="badge badge-{{ r.dificultad }}">{{ r.dificultad }}</span>
+      </div>
+      <div class="ruta-card-body">
+        <div class="ruta-meta">
+          {% if r.distancia_km %}<span>🚴 {{ r.distancia_km }} km</span>{% endif %}
+          {% if r.desnivel_m %}<span>⛰ {{ r.desnivel_m }} m</span>{% endif %}
+        </div>
+        {% if r.descripcion %}
+        <p style="font-size:0.92rem;color:var(--text2);margin-bottom:0.75rem;">{{ r.descripcion }}</p>
+        {% endif %}
+
+        {% if item.leaderboard %}
+        <div style="border-top:1px solid var(--border);padding-top:0.6rem;">
+          <div style="font-family:var(--font-pixel);font-size:0.4rem;color:var(--text2);margin-bottom:0.4rem;">TOP 3</div>
+          <ul class="leaderboard">
+            {% for e in item.leaderboard %}
+            <li class="leaderboard-entry">
+              <span class="rank rank-{{ e.rank if e.rank <= 3 else 'other' }}">
+                {% if e.rank == 1 %}🥇{% elif e.rank == 2 %}🥈{% elif e.rank == 3 %}🥉{% else %}{{ e.rank }}{% endif %}
+              </span>
+              {% if e.anonimo %}
+                <span class="lb-initials">{{ e.iniciales }}</span>
+              {% else %}
+                {% if e.foto_url %}<img src="{{ e.foto_url }}" class="lb-avatar" alt="">{% endif %}
+                <span class="lb-name">{{ e.nombre }}</span>
+              {% endif %}
+              <span class="lb-time">{{ e.tiempo | format_tiempo }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  {% else %}
+    <div class="card">
+      <div class="card-body text-center">
+        <p class="pixel text-muted">No hay rutas activas aún.</p>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

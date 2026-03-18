@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Perfil — {{ current_user.nombre }}{% endblock %}
+
+{% block content %}
+<div class="section">
+  <div class="d-flex align-center gap-2 mb-2">
+    {% if current_user.foto_url %}
+    <img src="{{ current_user.foto_url }}" style="width:48px;height:48px;border-radius:50%;border:2px solid var(--border);" alt="">
+    {% endif %}
+    <div>
+      <h1 style="margin:0;">{{ current_user.nombre }}</h1>
+      <p class="text-muted" style="font-size:0.85rem;">{{ current_user.email }}</p>
+    </div>
+  </div>
+
+  <h2>HISTORIAL DE TIEMPOS</h2>
+
+  {% if tiempos %}
+  <div class="card">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>RUTA</th>
+          <th>TIEMPO</th>
+          <th>GPS</th>
+          <th>FECHA</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tiempos %}
+        <tr>
+          <td>
+            <a href="{{ url_for('ruta_detalle', ruta_id=t.ruta_id) }}" style="color:var(--cyan);text-decoration:none;">
+              {{ t.ruta.nombre }}
+            </a>
+          </td>
+          <td>
+            <span class="pixel" style="color:var(--gold);">{{ t.tiempo_segundos | format_tiempo }}</span>
+          </td>
+          <td>
+            {% if t.gps_valido %}
+              <span style="color:var(--green);">✓</span>
+            {% else %}
+              <span style="color:var(--red);">✗</span>
+            {% endif %}
+          </td>
+          <td style="color:var(--text2);font-size:0.88rem;">
+            {{ t.registrado_en.strftime('%d/%m/%Y %H:%M') }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="card-body text-center">
+      <p class="pixel text-muted" style="font-size:0.45rem;padding:1rem 0;">
+        Aún no has completado ninguna ruta.
+      </p>
+      <a href="{{ url_for('index') }}" class="btn btn-primary">EXPLORAR RUTAS</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

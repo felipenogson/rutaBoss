@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Resultado — {{ ruta.nombre }}{% endblock %}
+
+{% block content %}
+<div class="section text-center">
+  <p class="pixel text-muted" style="font-size:0.45rem;margin-bottom:0.5rem;">RESULTADO FINAL</p>
+  <h1>{{ ruta.nombre }}</h1>
+
+  {% if sesion.estado == 'invalida' %}
+    <div class="gps-status gps-fail" style="margin:2rem 0;">
+      TIEMPO INVÁLIDO<br>Velocidad imposible para bicicleta.
+    </div>
+  {% else %}
+    <div class="resultado-label">TU TIEMPO</div>
+    <div class="resultado-time">{{ sesion.tiempo_segundos | format_tiempo }}</div>
+
+    {% if not sesion.gps_valido %}
+    <div class="gps-status gps-fail" style="margin:1rem 0;font-size:0.4rem;">
+      GPS no validado — tiempo no aparece en el leaderboard
+    </div>
+    {% endif %}
+
+    {% if is_top10 and sesion.gps_valido %}
+    <div class="gps-status gps-ok" style="margin:1rem 0;font-size:0.45rem;">
+      🏆 ¡ESTÁS EN EL TOP 10!
+    </div>
+
+    {% if not current_user.is_authenticated and not sesion.iniciales_anonimo %}
+    <!-- Arcade modal for anonymous users -->
+    <div class="modal-overlay" id="modal-iniciales">
+      <div class="modal-arcade">
+        <div class="modal-title">¡NUEVO RECORD!<br>INGRESA TUS INICIALES</div>
+        <form method="post" action="{{ url_for('registrar_resultado', token=sesion.token) }}">
+          <input
+            type="text"
+            name="iniciales"
+            id="initials-input"
+            class="initials-input"
+            maxlength="3"
+            placeholder="AAA"
+            autocomplete="off"
+            required
+          ><br>
+          <div style="margin-top:1.5rem;display:flex;flex-direction:column;gap:0.75rem;">
+            <button type="submit" class="btn btn-gold" style="width:100%;justify-content:center;font-size:0.5rem;">
+              GUARDAR INICIALES
+            </button>
+            <a href="{{ url_for('auth_google') }}" class="btn btn-google" style="width:100%;justify-content:center;font-size:0.5rem;">
+              ENTRAR CON GOOGLE
+            </a>
+            <a href="{{ url_for('auth_facebook') }}" class="btn btn-facebook" style="width:100%;justify-content:center;font-size:0.5rem;">
+              ENTRAR CON FACEBOOK
+            </a>
+            <button type="button" onclick="document.getElementById('modal-iniciales').style.display='none'" class="btn btn-ghost" style="width:100%;justify-content:center;font-size:0.45rem;">
+              CONTINUAR SIN GUARDAR
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+  {% endif %}
+
+  <div class="card mt-3" style="text-align:left;">
+    <div class="card-header">
+      <h2>LEADERBOARD ACTUAL</h2>
+    </div>
+    <div class="card-body">
+      {% if leaderboard %}
+      <ul class="leaderboard">
+        {% for e in leaderboard %}
+        <li class="leaderboard-entry">
+          <span class="rank rank-{{ e.rank if e.rank <= 3 else 'other' }}">
+            {% if e.rank == 1 %}🥇{% elif e.rank == 2 %}🥈{% elif e.rank == 3 %}🥉{% else %}#{{ e.rank }}{% endif %}
+          </span>
+          {% if e.anonimo %}
+            <span class="lb-initials">{{ e.iniciales }}</span>
+            <span class="lb-name text-muted" style="font-size:0.85rem;">ANÓNIMO</span>
+          {% else %}
+            {% if e.foto_url %}<img src="{{ e.foto_url }}" class="lb-avatar" alt="">{% endif %}
+            <span class="lb-name">{{ e.nombre }}</span>
+          {% endif %}
+          <span class="lb-time">{{ e.tiempo | format_tiempo }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+        <p class="pixel text-muted text-center" style="font-size:0.45rem;">Sin tiempos aún.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div style="margin-top:1.5rem;display:flex;gap:0.75rem;flex-direction:column;">
+    <a href="{{ url_for('ruta_detalle', ruta_id=ruta.id) }}" class="btn btn-ghost" style="justify-content:center;">
+      VER RUTA COMPLETA
+    </a>
+    <a href="{{ url_for('index') }}" class="btn btn-primary" style="justify-content:center;">
+      EXPLORAR RUTAS
+    </a>
+  </div>
+</div>
+{% endblock %}

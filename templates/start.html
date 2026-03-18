@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio — {{ ruta.nombre }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="section text-center">
+  <p class="pixel text-muted" style="font-size:0.45rem;margin-bottom:0.5rem;">PUNTO DE INICIO</p>
+  <h1>{{ ruta.nombre }}</h1>
+
+  <div class="ruta-meta justify-center mb-2" style="justify-content:center;">
+    {% if ruta.distancia_km %}<span>🚴 {{ ruta.distancia_km }} km</span>{% endif %}
+    {% if ruta.dificultad %}<span class="badge badge-{{ ruta.dificultad }}">{{ ruta.dificultad }}</span>{% endif %}
+  </div>
+
+  {% if ruta.lat_inicio and ruta.lon_inicio and ruta.lat_fin and ruta.lon_fin %}
+  <div id="map"></div>
+  {% endif %}
+
+  <div id="gps-status" class="gps-status gps-waiting">
+    Presiona el botón para obtener tu ubicación GPS<br>y validar que estás en el punto de inicio.
+  </div>
+
+  <button id="btn-iniciar" class="btn btn-start">
+    🚦 INICIAR CRONÓMETRO
+  </button>
+
+  <div style="margin-top:1.5rem;display:none;" id="timer-section">
+    <p class="timer-label">TIEMPO EN CURSO</p>
+    <div class="timer-display" id="live-timer">00:00</div>
+    <a href="{{ url_for('end', ruta_id=ruta.id) }}" class="btn btn-gold" style="margin-top:1rem;width:100%;justify-content:center;">
+      IR AL PUNTO DE LLEGADA →
+    </a>
+  </div>
+
+  <p style="font-family:var(--font-pixel);font-size:0.4rem;color:var(--text2);margin-top:1.5rem;line-height:2;">
+    ⚠ El GPS debe estar activado.<br>Debes estar a menos de 10m del punto marcado.
+  </p>
+</div>
+
+{% if ruta.lat_inicio and ruta.lon_inicio and ruta.lat_fin and ruta.lon_fin %}
+<script>
+  initMap({{ ruta.lat_inicio }}, {{ ruta.lon_inicio }}, {{ ruta.lat_fin }}, {{ ruta.lon_fin }});
+</script>
+{% endif %}
+<script>
+  initStartScreen({{ ruta.id }});
+
+  // Show timer section after successful start
+  document.getElementById('btn-iniciar').addEventListener('click', function() {
+    const orig = fetch;
+    // We override the response check in main.js via DOM observation
+  });
+
+  // Observe gps-status class changes to show timer
+  const observer = new MutationObserver(() => {
+    const status = document.getElementById('gps-status');
+    if (status.classList.contains('gps-ok') && status.textContent.includes('iniciado')) {
+      document.getElementById('timer-section').style.display = 'block';
+    }
+  });
+  observer.observe(document.getElementById('gps-status'), { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
+</script>
+{% endblock %}
