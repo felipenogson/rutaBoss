@@ -46,6 +46,10 @@
     </div>
   </main>
 
+  <footer style="text-align:center;padding:2rem 1rem;margin-top:3rem;border-top:1px solid var(--border);">
+    <a href="{{ url_for('privacy') }}" style="color:var(--text2);font-size:0.85rem;text-decoration:none;">Política de Privacidad</a>
+  </footer>
+
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
