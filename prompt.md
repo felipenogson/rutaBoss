@@ -389,7 +389,7 @@ cd rutaBoss
 ### Agregar dependencias
 
 ```bash
-uv add flask flask-login flask-sqlalchemy flask-oauthlib gunicorn pillow "qrcode[pil]" requests
+uv add flask flask-login flask-sqlalchemy flask-oauthlib gunicorn pillow "qrcode[pil]" requests python-dotenv
 ```
 
 ### Correr en desarrollo
@@ -414,6 +414,7 @@ dependencies = [
     "pillow",
     "qrcode[pil]",
     "requests",
+    "python-dotenv"
 ]
 ```
 

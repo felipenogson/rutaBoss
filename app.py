@@ -46,15 +46,6 @@ def create_app(env=None):
         client_kwargs={'scope': 'openid email profile'},
     )
 
-    facebook = oauth.register(
-        name='facebook',
-        client_id=app.config.get('FACEBOOK_CLIENT_ID'),
-        client_secret=app.config.get('FACEBOOK_CLIENT_SECRET'),
-        api_base_url='https://graph.facebook.com/',
-        access_token_url='https://graph.facebook.com/oauth/access_token',
-        authorize_url='https://www.facebook.com/dialog/oauth',
-        client_kwargs={'scope': 'email'},
-    )
 
     # ── Helpers ────────────────────────────────────────────────────────────
 
@@ -376,35 +367,6 @@ def create_app(env=None):
         login_user(usuario)
         return redirect(url_for('index'))
 
-    @app.route('/auth/facebook')
-    def auth_facebook():
-        redirect_uri = url_for('auth_facebook_callback', _external=True)
-        return facebook.authorize_redirect(redirect_uri)
-
-    @app.route('/auth/facebook/callback')
-    def auth_facebook_callback():
-        try:
-            facebook.authorize_access_token()
-            resp = facebook.get('/me?fields=id,name,email,picture')
-            data = resp.json()
-        except Exception:
-            flash('Login con Facebook fallido.')
-            return redirect(url_for('index'))
-
-        email = data.get('email', f"fb_{data['id']}@facebook.local")
-        usuario = Usuario.query.filter_by(email=email).first()
-        if not usuario:
-            pic = data.get('picture', {}).get('data', {}).get('url')
-            usuario = Usuario(
-                nombre=data.get('name', ''),
-                email=email,
-                foto_url=pic,
-                proveedor='facebook',
-            )
-            db.session.add(usuario)
-            db.session.commit()
-        login_user(usuario)
-        return redirect(url_for('index'))
 
     @app.route('/auth/logout', methods=['POST'])
     def logout():
