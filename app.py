@@ -183,6 +183,10 @@ def create_app(env=None):
         )
         return render_template('index.html', rutas_data=rutas_data, actividad=actividad)
 
+    @app.route('/privacy')
+    def privacy():
+        return render_template('privacy.html')
+
     @app.route('/ruta/<int:ruta_id>')
     def ruta_detalle(ruta_id):
         ruta = db.get_or_404(Ruta, ruta_id)
