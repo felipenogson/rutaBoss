@@ -2,10 +2,6 @@
 
 {% block title %}Nueva Ruta — Admin{% endblock %}
 
-{% block head %}
-<script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
-{% endblock %}
-
 {% block content %}
 <div class="section">
   <div class="d-flex justify-between align-center mb-2">
@@ -15,7 +11,7 @@
 
   <div class="card">
     <div class="card-body">
-      <form method="post" enctype="multipart/form-data">
+      <form method="post">
 
         <div class="form-group">
           <label class="form-label">NOMBRE DE LA RUTA *</label>
@@ -38,54 +34,73 @@
           </div>
           <div class="form-group">
             <label class="form-label">DISTANCIA (km)</label>
-            <input type="number" name="distancia_km" class="form-control" step="0.1" min="0" placeholder="5.2">
+            <input type="number" name="distancia_km" class="form-control" step="0.1" min="0" placeholder="5.2"
+              value="{{ '%.2f' % distancia_calc if distancia_calc else '' }}">
           </div>
         </div>
 
         <div class="form-group">
           <label class="form-label">DESNIVEL (metros)</label>
-          <input type="number" name="desnivel_m" class="form-control" min="0" placeholder="120">
+          <input type="number" name="desnivel_m" class="form-control" min="0" placeholder="120"
+            value="">
         </div>
 
         <hr style="border-color:var(--border);margin:1.5rem 0;">
-        <h3>COORDENADAS GPS</h3>
-        <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1rem;">
-          Al seleccionar la foto se leen las coordenadas GPS automáticamente. También puedes ingresarlas a mano.
+        <h3>FOTOS DE STAGING</h3>
+        <p style="font-size:0.8rem;color:var(--text2);margin-bottom:1rem;">
+          Coloca <code>inicio.jpg</code> y <code>final.jpg</code> en <code>uploads/nueva_ruta/</code> antes de crear la ruta.
         </p>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
-          <div class="form-group">
-            <label class="form-label">FOTO INICIO</label>
-            <input type="file" name="foto_inicio" id="foto_inicio" class="form-control" accept="image/*">
-            <div id="gps_inicio_status" style="font-size:0.78rem;margin-top:0.35rem;min-height:1.1em;"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;">
+          {% for punto, label in [('inicio', 'INICIO'), ('fin', 'FIN')] %}
+          <div style="padding:0.75rem;border:1px solid var(--border);border-radius:4px;">
+            <div style="font-family:var(--font-pixel);font-size:0.4rem;color:var(--text2);margin-bottom:0.5rem;">FOTO {{ label }}</div>
+            {% if fotos[punto]['encontrada'] %}
+              {% if fotos[punto]['gps'] %}
+                <div style="color:var(--gold);font-size:0.82rem;">
+                  ✓ GPS leído<br>
+                  <span style="color:var(--text2);font-size:0.75rem;">
+                    {{ '%.5f' % fotos[punto]['gps'][0] }}, {{ '%.5f' % fotos[punto]['gps'][1] }}
+                  </span>
+                </div>
+              {% else %}
+                <div style="color:var(--text);font-size:0.82rem;">
+                  ✓ Foto encontrada<br>
+                  <span style="color:var(--text2);font-size:0.75rem;">Sin GPS en EXIF — ingresa coordenadas manualmente.</span>
+                </div>
+              {% endif %}
+            {% else %}
+              <div style="color:var(--text2);font-size:0.82rem;">✗ No encontrada</div>
+            {% endif %}
           </div>
-          <div class="form-group">
-            <label class="form-label">FOTO FIN</label>
-            <input type="file" name="foto_fin" id="foto_fin" class="form-control" accept="image/*">
-            <div id="gps_fin_status" style="font-size:0.78rem;margin-top:0.35rem;min-height:1.1em;"></div>
-          </div>
+          {% endfor %}
         </div>
 
-        <p style="font-family:var(--font-pixel);font-size:0.4rem;color:var(--text2);margin:0.5rem 0 1rem;line-height:2;">
-          — O INGRESAR COORDENADAS MANUALMENTE —
-        </p>
-
+        <h3>COORDENADAS GPS</h3>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
           <div class="form-group">
             <label class="form-label">LAT INICIO</label>
-            <input type="number" name="lat_inicio" id="lat_inicio" class="form-control" step="any" placeholder="-33.4567">
+            <input type="number" name="lat_inicio" class="form-control" step="any" required
+              placeholder="-33.4567"
+              value="{{ '%.7f' % fotos['inicio']['gps'][0] if fotos['inicio']['gps'] else '' }}">
           </div>
           <div class="form-group">
             <label class="form-label">LON INICIO</label>
-            <input type="number" name="lon_inicio" id="lon_inicio" class="form-control" step="any" placeholder="-70.6789">
+            <input type="number" name="lon_inicio" class="form-control" step="any" required
+              placeholder="-70.6789"
+              value="{{ '%.7f' % fotos['inicio']['gps'][1] if fotos['inicio']['gps'] else '' }}">
           </div>
           <div class="form-group">
             <label class="form-label">LAT FIN</label>
-            <input type="number" name="lat_fin" id="lat_fin" class="form-control" step="any" placeholder="-33.4600">
+            <input type="number" name="lat_fin" class="form-control" step="any" required
+              placeholder="-33.4600"
+              value="{{ '%.7f' % fotos['fin']['gps'][0] if fotos['fin']['gps'] else '' }}">
           </div>
           <div class="form-group">
             <label class="form-label">LON FIN</label>
-            <input type="number" name="lon_fin" id="lon_fin" class="form-control" step="any" placeholder="-70.6800">
+            <input type="number" name="lon_fin" class="form-control" step="any" required
+              placeholder="-70.6800"
+              value="{{ '%.7f' % fotos['fin']['gps'][1] if fotos['fin']['gps'] else '' }}">
           </div>
         </div>
 
@@ -97,89 +112,4 @@
     </div>
   </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-  const state = { inicio: null, fin: null };
-
-  function haversine(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat/2)**2 +
-              Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-              Math.sin(dLon/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  }
-
-  function actualizarCalculos() {
-    if (!state.inicio || !state.fin) return;
-    const dist = haversine(state.inicio.lat, state.inicio.lon, state.fin.lat, state.fin.lon);
-    document.querySelector('[name=distancia_km]').value = dist.toFixed(2);
-
-    if (state.inicio.alt != null && state.fin.alt != null) {
-      const desnivel = Math.abs(state.fin.alt - state.inicio.alt);
-      document.querySelector('[name=desnivel_m]').value = Math.round(desnivel);
-    }
-  }
-
-  async function leerGPS(inputEl, latId, lonId, statusId, punto) {
-    const file = inputEl.files[0];
-    const status = document.getElementById(statusId);
-    if (!file) return;
-
-    status.textContent = 'Leyendo GPS...';
-    status.style.color = 'var(--text2)';
-
-    try {
-      const data = await exifr.parse(file, {
-        pick: ['GPSLatitude', 'GPSLatitudeRef', 'GPSLongitude', 'GPSLongitudeRef', 'GPSAltitude', 'GPSAltitudeRef']
-      });
-
-      if (!data || data.GPSLatitude == null || data.GPSLongitude == null) {
-        status.textContent = 'Sin GPS en la foto — ingresa las coordenadas manualmente.';
-        status.style.color = 'var(--text2)';
-        return;
-      }
-
-      function dmsToDD(dms, ref) {
-        const dd = dms[0] + dms[1] / 60 + dms[2] / 3600;
-        return (ref === 'S' || ref === 'W') ? -dd : dd;
-      }
-
-      const lat = dmsToDD(data.GPSLatitude, data.GPSLatitudeRef);
-      const lon = dmsToDD(data.GPSLongitude, data.GPSLongitudeRef);
-
-      if (isNaN(lat) || isNaN(lon)) {
-        status.textContent = 'GPS inválido en el EXIF — ingresa las coordenadas manualmente.';
-        status.style.color = 'var(--text2)';
-        return;
-      }
-
-      document.getElementById(latId).value = lat.toFixed(7);
-      document.getElementById(lonId).value = lon.toFixed(7);
-
-      const alt = (data.GPSAltitude != null && !isNaN(data.GPSAltitude)) ? data.GPSAltitude : null;
-      state[punto] = { lat, lon, alt };
-
-      const altStr = alt != null ? ` · ${Math.round(alt)}m s.n.m.` : '';
-      status.textContent = `✓ ${lat.toFixed(5)}, ${lon.toFixed(5)}${altStr}`;
-      status.style.color = 'var(--gold)';
-
-      actualizarCalculos();
-    } catch (e) {
-      status.textContent = 'No se pudo leer el EXIF — ingresa las coordenadas manualmente.';
-      status.style.color = 'var(--text2)';
-    }
-  }
-
-  document.getElementById('foto_inicio').addEventListener('change', function () {
-    leerGPS(this, 'lat_inicio', 'lon_inicio', 'gps_inicio_status', 'inicio');
-  });
-
-  document.getElementById('foto_fin').addEventListener('change', function () {
-    leerGPS(this, 'lat_fin', 'lon_fin', 'gps_fin_status', 'fin');
-  });
-</script>
 {% endblock %}

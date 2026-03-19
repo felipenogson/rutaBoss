@@ -1,7 +1,9 @@
 import os
+import re
 import uuid
 import io
 import base64
+import shutil
 from math import radians, sin, cos, sqrt, atan2
 from datetime import datetime, timedelta
 from functools import wraps
@@ -149,6 +151,12 @@ def create_app(env=None):
     app.jinja_env.filters['format_tiempo'] = format_tiempo
 
     # ── CLI commands ───────────────────────────────────────────────────────
+
+    def slugify(nombre):
+        s = nombre.lower().strip()
+        s = re.sub(r'[^\w\s-]', '', s)
+        s = re.sub(r'[\s_-]+', '_', s)
+        return s
 
     @app.cli.command('expire-sessions')
     def expire_sessions_cmd():
@@ -407,6 +415,21 @@ def create_app(env=None):
     @app.route('/admin/nueva', methods=['GET', 'POST'])
     @admin_required
     def admin_nueva_ruta():
+        staging = app.config['STAGING_FOLDER']
+        os.makedirs(staging, exist_ok=True)
+
+        path_inicio = os.path.join(staging, 'inicio.jpg')
+        path_fin = os.path.join(staging, 'final.jpg')
+
+        fotos = {
+            'inicio': {'encontrada': os.path.exists(path_inicio), 'gps': None},
+            'fin':    {'encontrada': os.path.exists(path_fin),    'gps': None},
+        }
+        if fotos['inicio']['encontrada']:
+            fotos['inicio']['gps'] = get_exif_gps(path_inicio)
+        if fotos['fin']['encontrada']:
+            fotos['fin']['gps'] = get_exif_gps(path_fin)
+
         if request.method == 'POST':
             nombre = request.form.get('nombre')
             descripcion = request.form.get('descripcion')
@@ -414,57 +437,58 @@ def create_app(env=None):
             distancia_km = request.form.get('distancia_km', type=float)
             desnivel_m = request.form.get('desnivel_m', type=int)
 
+            lat_inicio = request.form.get('lat_inicio', type=float)
+            lon_inicio = request.form.get('lon_inicio', type=float)
+            lat_fin    = request.form.get('lat_fin',    type=float)
+            lon_fin    = request.form.get('lon_fin',    type=float)
+
+            errors = []
+            if lat_inicio is None or lon_inicio is None:
+                errors.append('Falta coordenada de inicio.')
+            if lat_fin is None or lon_fin is None:
+                errors.append('Falta coordenada de fin.')
+            if errors:
+                for e in errors:
+                    flash(e)
+                return render_template('admin/nueva_ruta.html', fotos=fotos)
+
             ruta = Ruta(
                 nombre=nombre,
                 descripcion=descripcion,
                 dificultad=dificultad,
                 distancia_km=distancia_km,
                 desnivel_m=desnivel_m,
+                lat_inicio=lat_inicio,
+                lon_inicio=lon_inicio,
+                lat_fin=lat_fin,
+                lon_fin=lon_fin,
             )
             db.session.add(ruta)
             db.session.flush()
 
-            for campo, suffix in [('foto_inicio', 'inicio'), ('foto_fin', 'fin')]:
-                foto = request.files.get(campo)
-                if foto and foto.filename:
-                    path = os.path.join(app.config['UPLOAD_FOLDER'], f'{ruta.id}_{suffix}.jpg')
-                    foto.save(path)
-                    gps = get_exif_gps(path)
-                    if suffix == 'inicio':
-                        ruta.foto_inicio = f'{ruta.id}_{suffix}.jpg'
-                        if gps:
-                            ruta.lat_inicio, ruta.lon_inicio = gps
-                    else:
-                        ruta.foto_fin = f'{ruta.id}_{suffix}.jpg'
-                        if gps:
-                            ruta.lat_fin, ruta.lon_fin = gps
+            slug = slugify(nombre)
+            destino = os.path.join(app.config['UPLOAD_FOLDER'], slug)
+            os.makedirs(destino, exist_ok=True)
 
-            # Manual coordinate override (takes precedence over EXIF)
-            for field, attr in [
-                ('lat_inicio', 'lat_inicio'), ('lon_inicio', 'lon_inicio'),
-                ('lat_fin', 'lat_fin'), ('lon_fin', 'lon_fin'),
+            for src, fname, attr in [
+                (path_inicio, 'inicio.jpg', 'foto_inicio'),
+                (path_fin,    'final.jpg',  'foto_fin'),
             ]:
-                val = request.form.get(field, type=float)
-                if val is not None:
-                    setattr(ruta, attr, val)
-
-            errors = []
-            if ruta.lat_inicio is None or ruta.lon_inicio is None:
-                errors.append('Falta coordenada de inicio. Sube una foto con GPS o ingresa las coordenadas manualmente.')
-            if ruta.lat_fin is None or ruta.lon_fin is None:
-                errors.append('Falta coordenada de fin. Sube una foto con GPS o ingresa las coordenadas manualmente.')
-
-            if errors:
-                db.session.rollback()
-                for e in errors:
-                    flash(e)
-                return render_template('admin/nueva_ruta.html')
+                if os.path.exists(src):
+                    shutil.move(src, os.path.join(destino, fname))
+                    setattr(ruta, attr, f'{slug}/{fname}')
 
             db.session.commit()
             flash(f'Ruta "{nombre}" creada exitosamente.')
             return redirect(url_for('admin_index'))
 
-        return render_template('admin/nueva_ruta.html')
+        distancia_calc = None
+        gps_i = fotos['inicio']['gps']
+        gps_f = fotos['fin']['gps']
+        if gps_i and gps_f:
+            distancia_calc = haversine(gps_i[0], gps_i[1], gps_f[0], gps_f[1])
+
+        return render_template('admin/nueva_ruta.html', fotos=fotos, distancia_calc=distancia_calc)
 
     @app.route('/admin/ruta/<int:ruta_id>/qr')
     @admin_required

@@ -12,6 +12,7 @@ class Config:
     ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
     ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin')
     UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads', 'rutas')
+    STAGING_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads', 'nueva_ruta')
 
 
 class DevelopmentConfig(Config):
