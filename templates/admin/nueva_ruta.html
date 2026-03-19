@@ -2,6 +2,10 @@
 
 {% block title %}Nueva Ruta — Admin{% endblock %}
 
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/exifr/dist/lite.umd.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="section">
   <div class="d-flex justify-between align-center mb-2">
@@ -46,17 +50,19 @@
         <hr style="border-color:var(--border);margin:1.5rem 0;">
         <h3>COORDENADAS GPS</h3>
         <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1rem;">
-          Sube fotos con GPS EXIF, o ingresa las coordenadas manualmente.
+          Al seleccionar la foto se leen las coordenadas GPS automáticamente. También puedes ingresarlas a mano.
         </p>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
           <div class="form-group">
-            <label class="form-label">FOTO INICIO (con GPS EXIF)</label>
-            <input type="file" name="foto_inicio" class="form-control" accept="image/*">
+            <label class="form-label">FOTO INICIO</label>
+            <input type="file" name="foto_inicio" id="foto_inicio" class="form-control" accept="image/*">
+            <div id="gps_inicio_status" style="font-size:0.78rem;margin-top:0.35rem;min-height:1.1em;"></div>
           </div>
           <div class="form-group">
-            <label class="form-label">FOTO FIN (con GPS EXIF)</label>
-            <input type="file" name="foto_fin" class="form-control" accept="image/*">
+            <label class="form-label">FOTO FIN</label>
+            <input type="file" name="foto_fin" id="foto_fin" class="form-control" accept="image/*">
+            <div id="gps_fin_status" style="font-size:0.78rem;margin-top:0.35rem;min-height:1.1em;"></div>
           </div>
         </div>
 
@@ -67,19 +73,19 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
           <div class="form-group">
             <label class="form-label">LAT INICIO</label>
-            <input type="number" name="lat_inicio" class="form-control" step="any" placeholder="-33.4567">
+            <input type="number" name="lat_inicio" id="lat_inicio" class="form-control" step="any" placeholder="-33.4567">
           </div>
           <div class="form-group">
             <label class="form-label">LON INICIO</label>
-            <input type="number" name="lon_inicio" class="form-control" step="any" placeholder="-70.6789">
+            <input type="number" name="lon_inicio" id="lon_inicio" class="form-control" step="any" placeholder="-70.6789">
           </div>
           <div class="form-group">
             <label class="form-label">LAT FIN</label>
-            <input type="number" name="lat_fin" class="form-control" step="any" placeholder="-33.4600">
+            <input type="number" name="lat_fin" id="lat_fin" class="form-control" step="any" placeholder="-33.4600">
           </div>
           <div class="form-group">
             <label class="form-label">LON FIN</label>
-            <input type="number" name="lon_fin" class="form-control" step="any" placeholder="-70.6800">
+            <input type="number" name="lon_fin" id="lon_fin" class="form-control" step="any" placeholder="-70.6800">
           </div>
         </div>
 
@@ -91,4 +97,41 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function leerGPS(inputEl, latId, lonId, statusId) {
+    const file = inputEl.files[0];
+    const status = document.getElementById(statusId);
+    if (!file) return;
+
+    status.textContent = 'Leyendo GPS...';
+    status.style.color = 'var(--text2)';
+
+    try {
+      const gps = await exifr.gps(file);
+      if (gps && gps.latitude != null && gps.longitude != null) {
+        document.getElementById(latId).value = gps.latitude.toFixed(7);
+        document.getElementById(lonId).value = gps.longitude.toFixed(7);
+        status.textContent = `✓ GPS leído: ${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`;
+        status.style.color = 'var(--gold)';
+      } else {
+        status.textContent = 'Sin GPS en la foto — ingresa las coordenadas manualmente.';
+        status.style.color = 'var(--text2)';
+      }
+    } catch (e) {
+      status.textContent = 'No se pudo leer el EXIF — ingresa las coordenadas manualmente.';
+      status.style.color = 'var(--text2)';
+    }
+  }
+
+  document.getElementById('foto_inicio').addEventListener('change', function () {
+    leerGPS(this, 'lat_inicio', 'lon_inicio', 'gps_inicio_status');
+  });
+
+  document.getElementById('foto_fin').addEventListener('change', function () {
+    leerGPS(this, 'lat_fin', 'lon_fin', 'gps_fin_status');
+  });
+</script>
 {% endblock %}
