@@ -496,6 +496,39 @@ h3 { font-size: 0.55rem; color: var(--text2); margin-bottom: 0.5rem; }
 /* ===== Section spacing ===== */
 .section { margin-bottom: 2rem; }
 
+/* ===== Hero copy ===== */
+.hero-copy {
+  padding: 1.5rem 0 1.75rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.75rem;
+}
+
+.hero-tagline {
+  font-family: var(--font-pixel);
+  font-size: 0.65rem;
+  color: var(--gold);
+  margin-bottom: 0.9rem;
+  line-height: 1.8;
+}
+
+.hero-sub {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 0.6rem;
+  max-width: 560px;
+}
+
+.hero-cta {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 1rem;
+  letter-spacing: 0.03em;
+}
+
 /* ===== Flash messages ===== */
 .flash-messages { list-style: none; margin-bottom: 1rem; }
 
