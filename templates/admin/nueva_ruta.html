@@ -3,7 +3,7 @@
 {% block title %}Nueva Ruta — Admin{% endblock %}
 
 {% block head %}
-<script src="https://cdn.jsdelivr.net/npm/exifr/dist/lite.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exifr/dist/full.umd.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -101,7 +101,30 @@
 
 {% block scripts %}
 <script>
-  async function leerGPS(inputEl, latId, lonId, statusId) {
+  const state = { inicio: null, fin: null };
+
+  function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 +
+              Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+              Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  function actualizarCalculos() {
+    if (!state.inicio || !state.fin) return;
+    const dist = haversine(state.inicio.lat, state.inicio.lon, state.fin.lat, state.fin.lon);
+    document.querySelector('[name=distancia_km]').value = dist.toFixed(2);
+
+    if (state.inicio.alt != null && state.fin.alt != null) {
+      const desnivel = Math.abs(state.fin.alt - state.inicio.alt);
+      document.querySelector('[name=desnivel_m]').value = Math.round(desnivel);
+    }
+  }
+
+  async function leerGPS(inputEl, latId, lonId, statusId, punto) {
     const file = inputEl.files[0];
     const status = document.getElementById(statusId);
     if (!file) return;
@@ -110,16 +133,41 @@
     status.style.color = 'var(--text2)';
 
     try {
-      const gps = await exifr.gps(file);
-      if (gps && gps.latitude != null && gps.longitude != null) {
-        document.getElementById(latId).value = gps.latitude.toFixed(7);
-        document.getElementById(lonId).value = gps.longitude.toFixed(7);
-        status.textContent = `✓ GPS leído: ${gps.latitude.toFixed(5)}, ${gps.longitude.toFixed(5)}`;
-        status.style.color = 'var(--gold)';
-      } else {
+      const data = await exifr.parse(file, {
+        pick: ['GPSLatitude', 'GPSLatitudeRef', 'GPSLongitude', 'GPSLongitudeRef', 'GPSAltitude', 'GPSAltitudeRef']
+      });
+
+      if (!data || data.GPSLatitude == null || data.GPSLongitude == null) {
         status.textContent = 'Sin GPS en la foto — ingresa las coordenadas manualmente.';
         status.style.color = 'var(--text2)';
+        return;
       }
+
+      function dmsToDD(dms, ref) {
+        const dd = dms[0] + dms[1] / 60 + dms[2] / 3600;
+        return (ref === 'S' || ref === 'W') ? -dd : dd;
+      }
+
+      const lat = dmsToDD(data.GPSLatitude, data.GPSLatitudeRef);
+      const lon = dmsToDD(data.GPSLongitude, data.GPSLongitudeRef);
+
+      if (isNaN(lat) || isNaN(lon)) {
+        status.textContent = 'GPS inválido en el EXIF — ingresa las coordenadas manualmente.';
+        status.style.color = 'var(--text2)';
+        return;
+      }
+
+      document.getElementById(latId).value = lat.toFixed(7);
+      document.getElementById(lonId).value = lon.toFixed(7);
+
+      const alt = (data.GPSAltitude != null && !isNaN(data.GPSAltitude)) ? data.GPSAltitude : null;
+      state[punto] = { lat, lon, alt };
+
+      const altStr = alt != null ? ` · ${Math.round(alt)}m s.n.m.` : '';
+      status.textContent = `✓ ${lat.toFixed(5)}, ${lon.toFixed(5)}${altStr}`;
+      status.style.color = 'var(--gold)';
+
+      actualizarCalculos();
     } catch (e) {
       status.textContent = 'No se pudo leer el EXIF — ingresa las coordenadas manualmente.';
       status.style.color = 'var(--text2)';
@@ -127,11 +175,11 @@
   }
 
   document.getElementById('foto_inicio').addEventListener('change', function () {
-    leerGPS(this, 'lat_inicio', 'lon_inicio', 'gps_inicio_status');
+    leerGPS(this, 'lat_inicio', 'lon_inicio', 'gps_inicio_status', 'inicio');
   });
 
   document.getElementById('foto_fin').addEventListener('change', function () {
-    leerGPS(this, 'lat_fin', 'lon_fin', 'gps_fin_status');
+    leerGPS(this, 'lat_fin', 'lon_fin', 'gps_fin_status', 'fin');
   });
 </script>
 {% endblock %}
