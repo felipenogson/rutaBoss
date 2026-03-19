@@ -8,7 +8,7 @@ from functools import wraps
 
 import qrcode
 from PIL import Image
-from PIL.ExifTags import TAGS, GPSTAGS
+from PIL.ExifTags import TAGS, GPSTAGS, IFD
 from flask import (
     Flask, render_template, request, redirect, url_for,
     session, jsonify, flash, make_response
@@ -59,18 +59,13 @@ def create_app(env=None):
     def get_exif_gps(image_path):
         try:
             img = Image.open(image_path)
-            exif_data = img._getexif()
-            if not exif_data:
+            exif = img.getexif()
+            if not exif:
                 return None
-            gps_info = {}
-            for tag_id, value in exif_data.items():
-                tag = TAGS.get(tag_id, tag_id)
-                if tag == 'GPSInfo':
-                    for gps_tag_id, gps_value in value.items():
-                        gps_tag = GPSTAGS.get(gps_tag_id, gps_tag_id)
-                        gps_info[gps_tag] = gps_value
-            if not gps_info:
+            gps_ifd = exif.get_ifd(IFD.GPSInfo)
+            if not gps_ifd:
                 return None
+            gps_info = {GPSTAGS.get(k, k): v for k, v in gps_ifd.items()}
 
             def dms_to_dd(dms, ref):
                 d, m, s = dms
@@ -429,26 +424,22 @@ def create_app(env=None):
             db.session.add(ruta)
             db.session.flush()
 
-            errors = []
-
             for campo, suffix in [('foto_inicio', 'inicio'), ('foto_fin', 'fin')]:
                 foto = request.files.get(campo)
                 if foto and foto.filename:
                     path = os.path.join(app.config['UPLOAD_FOLDER'], f'{ruta.id}_{suffix}.jpg')
                     foto.save(path)
                     gps = get_exif_gps(path)
-                    if not gps:
-                        errors.append(f'La foto de {suffix} no tiene datos GPS en EXIF.')
-                        os.remove(path)
-                    else:
-                        if suffix == 'inicio':
+                    if suffix == 'inicio':
+                        ruta.foto_inicio = f'{ruta.id}_{suffix}.jpg'
+                        if gps:
                             ruta.lat_inicio, ruta.lon_inicio = gps
-                            ruta.foto_inicio = f'{ruta.id}_{suffix}.jpg'
-                        else:
+                    else:
+                        ruta.foto_fin = f'{ruta.id}_{suffix}.jpg'
+                        if gps:
                             ruta.lat_fin, ruta.lon_fin = gps
-                            ruta.foto_fin = f'{ruta.id}_{suffix}.jpg'
 
-            # Manual coordinate override
+            # Manual coordinate override (takes precedence over EXIF)
             for field, attr in [
                 ('lat_inicio', 'lat_inicio'), ('lon_inicio', 'lon_inicio'),
                 ('lat_fin', 'lat_fin'), ('lon_fin', 'lon_fin'),
@@ -456,6 +447,12 @@ def create_app(env=None):
                 val = request.form.get(field, type=float)
                 if val is not None:
                     setattr(ruta, attr, val)
+
+            errors = []
+            if ruta.lat_inicio is None or ruta.lon_inicio is None:
+                errors.append('Falta coordenada de inicio. Sube una foto con GPS o ingresa las coordenadas manualmente.')
+            if ruta.lat_fin is None or ruta.lon_fin is None:
+                errors.append('Falta coordenada de fin. Sube una foto con GPS o ingresa las coordenadas manualmente.')
 
             if errors:
                 db.session.rollback()
