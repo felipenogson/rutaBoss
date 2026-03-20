@@ -1,6 +1,8 @@
 import os
 import re
 import uuid
+from dotenv import load_dotenv
+load_dotenv()
 import io
 import base64
 import shutil
